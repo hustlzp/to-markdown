@@ -12,7 +12,6 @@ var he = require('he');
 
 var htmlToDom = require('./lib/html-to-dom');
 var converters = require('./lib/md-converters');
-var isArray = require('./lib/utilities').isArray;
 
 var VOID_ELEMENTS = [
   'area', 'base', 'br', 'col', 'command', 'embed', 'hr', 'img', 'input',
@@ -72,7 +71,7 @@ function bfsOrder(root) {
 }
 
 function canConvertNode(node, filter) {
-  if (isArray(filter)) {
+  if (Array.isArray(filter)) {
     return filter.indexOf(node.tagName.toLowerCase()) !== -1;
   }
   else if (typeof filter === 'string') {
