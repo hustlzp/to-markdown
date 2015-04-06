@@ -18,17 +18,18 @@ var VOID_ELEMENTS = [
   'keygen', 'link', 'meta', 'param', 'source', 'track', 'wbr'
 ];
 
-module.exports = function (input, opts) {
+module.exports = function (input, options) {
   if (typeof input !== 'string') {
     throw 'first argument needs to be an HTML string';
   }
+  options = options || {};
+
   // Escape potential ol triggers
   input = input.replace(/(\d+)\. /g, '$1\\. ');
-  opts = opts || {};
-  var customConverters = opts.converters || [];
-  // custom converters come first, because the replacement is executed on
+
+  // Custom converters come first, because the replacement is executed on
   // a first come first serve basis
-  converters = customConverters.concat(converters);
+  converters = (options.converters || []).concat(converters);
 
   var doc = htmlToDom(input);
   var clone = doc.body;
