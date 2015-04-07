@@ -355,31 +355,34 @@ test('leading/trailing whitespace', function() {
   equal(toMarkdown(lisWithTrailingWhitespaceHtml), lisWithTrailingWhitespaceMd, 'We expect list items with trailing whitespace to be converted');
 });
 
-test('custom converters/sub, sup', function() {
-  var converters = [{
-    filter: 'sub',
-    replacement: function(innerHTML) {
-      return '~' + innerHTML + '~';
-    }
-  }];
-  var html = 'This is normal text<sub>subscript</sub>';
-  var md = 'This is normal text~subscript~';
-  equal(toMarkdown(html, {converters: converters}), md, 'We expect sub to be converted');
+test('custom converters', function() {
+  var html, converter, md = '*Hello world*';
+  var replacement = function (innerHTML) {
+    return '*' + innerHTML + '*';
+  };
 
-  converters = [{
-    filter: 'sub',
-    replacement: function(innerHTML) {
-      return '~' + innerHTML + '~';
-    }
-  }, {
-    filter: 'sup',
-    replacement: function(innerHTML) {
-      return '^' + innerHTML + '^';
-    }
-  }];
-  html = 'This is normal text<sub>subscript</sub>. Another normal text<sup>superscript</sup>';
-  md = 'This is normal text~subscript~. Another normal text^superscript^';
-  equal(toMarkdown(html, {converters: converters}), md, 'We expect sup to be converted');
+  html = '<span>Hello world</span>';
+  converter = {
+    filter: 'span',
+    replacement: replacement
+  };
+  equal(toMarkdown(html, {converters: [converter]}), md, 'Custom filter string');
+
+  html = '<span>Hello world</span>';
+  converter = {
+    filter: ['span'],
+    replacement: replacement
+  };
+  equal(toMarkdown(html, {converters: [converter]}), md, 'Custom filter array');
+
+  html = '<span style="font-style: italic">Hello world</span>';
+  converter = {
+    filter: function (node) {
+      return node.tagName === 'SPAN' && /italic/i.test(node.style.fontStyle);
+    },
+    replacement: replacement
+  };
+  equal(toMarkdown(html, {converters: [converter]}), md, 'Custom filter function');
 });
 
 asyncTest('img[onerror]', 1, function () {
