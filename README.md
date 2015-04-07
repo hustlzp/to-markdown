@@ -37,7 +37,11 @@ Or with **Bower**:
 
 ### `converters` (array)
 
-to-markdown can be extended by passing in an array of converters to the options object. A converter object consists of a **filter**, and a **replacement**. This example from the source replaces `code` elements:
+to-markdown can be extended by passing in an array of converters to the options object:
+
+    toMarkdown(stringOfHTML, { converters: [converter1, converter2, …] });
+
+A converter object consists of a **filter**, and a **replacement**. This example from the source replaces `code` elements:
 
     {
       filter: 'code',
@@ -53,11 +57,10 @@ The filter property determines whether or not an element should be replaced. DOM
 * `filter: 'p'` will select `p` elements
 * `filter: ['em', 'i']` will select `em` or `i` elements
 
-Alternatively, the filter can be a function that returns a boolean depending on whether a given node should be replaced. The function is passed a DOM node as its only argument. For example, the following will match any `span` element with an `italic` style:
+Alternatively, the filter can be a function that returns a boolean depending on whether a given node should be replaced. The function is passed a DOM node as its only argument. For example, the following will match any `span` element with an `italic` font style:
 
     filter: function (node) {
-      return node.tagName.toLowerCase() === 'span' &&
-        /italic/i.test(node.style);
+      return node.tagName === 'SPAN' && /italic/i.test(node.style.fontStyle);
     }
 
 #### `replacement` (function)
