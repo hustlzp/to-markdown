@@ -1,11 +1,15 @@
 language: node_js
 node_js:
-  - 0.12
-  - 0.10
-
+- 0.12
+- 0.1
 before_script:
-  - npm install -g bower
-  - bower install --dev
-  - npm install --dev
-
-script: npm test
+- npm install -g bower
+- bower install --dev
+- npm install --dev
+script:
+- npm test
+- testem ci
+env:
+  global:
+  - secure: Xc1137ejdgD1wK/ar3IGraFpO7LwlhFfACOWs7phgehe2MFkLKSMMpUs6VHPpTIFfowEbQxRQGNUsjIQSroHAWTJ1poKcbxJoJRZ9BHWFq7sk20y267r/anAHJxOxvoAVmbQecU8HW9hW7f0gT7PiabVMQzJ1Oih+ZsfgKiHBMI=
+  - secure: GhXrvpBbP6OufKFikVUi36f1atX2EyVrIBvN0N+DZncQCC71og6DF9YEWfF9McHpY3kZrwY6Gc6hy1EYtb+EnWGxaOc5OlBub/yXA+T7C2BWrc53VB6NKbhsYWfdKZc0WMSXR/bsIYk0EhGYfBhWqo+QYUdv4lS5bWoOrSy7ll0=
