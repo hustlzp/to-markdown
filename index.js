@@ -41,7 +41,16 @@ module.exports = toMarkdown = function (input, options) {
   // Flattens node tree into a single array
   var nodes = bfsOrder(clone);
 
-  converters = options.gfm ? gfmConverters.concat(mdConverters) : mdConverters;
+  // Clone converters
+  converters = mdConverters.slice(0);
+
+  if (options.gfm) {
+    converters = gfmConverters.concat(converters);
+  }
+
+  if (options.converters) {
+    converters = options.converters.concat(converters);
+  }
 
   // Loop through nodes in reverse (so deepest child elements are first).
   // Replace nodes as necessary.
@@ -140,7 +149,7 @@ function replacementForNode(node, doc) {
       var trailingSpace = '';
 
       if (typeof replacement !== 'function') {
-        throw '`replacement` needs to be a function that returns a string';
+        throw new TypeError('`replacement` needs to be a function that returns a string');
       }
 
       if (!isBlock(node)) {
