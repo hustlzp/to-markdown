@@ -13,8 +13,7 @@ var htmlToDom = require('./lib/html-to-dom');
 var converters = require('./lib/md-converters');
 var utilities = require('./lib/utilities');
 
-var isRegExp = utilities.isRegExp;
-var isBlockLevel = utilities.isBlockLevel;
+var isBlock = utilities.isBlock;
 var trim = utilities.trim;
 var decodeHTMLEntities = require('he').decode;
 
@@ -56,7 +55,7 @@ module.exports = toMarkdown = function (input) {
 };
 
 toMarkdown.decodeHTMLEntities = decodeHTMLEntities;
-toMarkdown.isBlockLevel = isBlockLevel;
+toMarkdown.isBlock = isBlock;
 toMarkdown.trim = trim;
 
 function bfsOrder(root) {
@@ -77,17 +76,17 @@ function bfsOrder(root) {
 }
 
 function canConvertNode(node, filter) {
-  if (isRegExp(filter)) {
-    return filter.test(node.tagName);
+  if (typeof filter === 'string') {
+    return filter === node.nodeName.toLowerCase();
   }
-  else if (typeof filter === 'string') {
-    return new RegExp('^' + filter + '$', 'i').test(node.tagName);
+  if (Array.isArray(filter)) {
+    return filter.indexOf(node.nodeName.toLowerCase()) !== -1;
   }
   else if (typeof filter === 'function') {
     return filter.call(toMarkdown, node);
   }
   else {
-    throw '`filter` needs to be a RegExp, string, or function';
+    throw '`filter` needs to be a string, array, or function';
   }
 }
 
@@ -110,19 +109,19 @@ function isFlankedByExternalSpace(direction, node) {
     if (sibling.nodeType === 3) {
       flankedBySpace = regExp.test(sibling.nodeValue);
     }
-    else if(sibling.nodeType === 1 && !isBlockLevel(sibling)) {
+    else if(sibling.nodeType === 1 && !isBlock(sibling)) {
       flankedBySpaceInInlineElement = regExp.test(node.textContent || node.innertext);
     }
   }
   return flankedBySpace || flankedBySpaceInInlineElement;
 }
 
-// Loops through all md converters, checking to see if the node tagName matches.
+// Loops through all md converters, checking to see if the node nodeName matches.
 // Returns the replacement text node or null.
 function replacementForNode(node, doc) {
 
   // Remove blank nodes
-  if (VOID_ELEMENTS.indexOf(node.tagName.toLowerCase()) === -1 && /^\s*$/i.test(node.innerHTML)) {
+  if (VOID_ELEMENTS.indexOf(node.nodeName.toLowerCase()) === -1 && /^\s*$/i.test(node.innerHTML)) {
     return doc.createTextNode('');
   }
 
@@ -139,7 +138,7 @@ function replacementForNode(node, doc) {
         throw '`replacement` needs to be a function that returns a string';
       }
 
-      if (!isBlockLevel(node)) {
+      if (!isBlock(node)) {
         var hasLeadingWhitespace = /^[ \r\n\t]/.test(node.innerHTML);
         var hasTrailingWhitespace = /[ \r\n\t]$/.test(node.innerHTML);
 
@@ -177,7 +176,7 @@ module.exports = _document;
 'use strict';
 
 var collapse = require('collapse-whitespace');
-var isBlockLevel = require('./utilities').isBlockLevel;
+var isBlock = require('./utilities').isBlock;
 var doc = require('./document');
 var root = (typeof window !== 'undefined' ? window : this);
 
@@ -209,7 +208,7 @@ if (!canParseHtml) {
 
 module.exports = function (input) {
   var tree = new Parser().parseFromString(input, 'text/html');
-  collapse(tree, isBlockLevel);
+  collapse(tree, isBlock);
   return tree;
 };
 
@@ -232,9 +231,9 @@ module.exports = [
   },
 
   {
-    filter: 'h[1-6]',
+    filter: ['h1', 'h2', 'h3', 'h4','h5', 'h6'],
     replacement: function(innerHTML, node) {
-      var hLevel = node.tagName.charAt(1);
+      var hLevel = node.nodeName.charAt(1);
       var hPrefix = '';
       for(var i = 0; i < hLevel; i++) {
         hPrefix += '#';
@@ -251,14 +250,14 @@ module.exports = [
   },
 
   {
-    filter: /^em$|^i$/i,
+    filter: ['em', 'i'],
     replacement: function (innerHTML) {
       return '_' + innerHTML + '_';
     }
   },
 
   {
-    filter: /^strong$|^b$/i,
+    filter: ['strong', 'b'],
     replacement: function (innerHTML) {
       return '**' + innerHTML + '**';
     }
@@ -334,20 +333,20 @@ module.exports = [
       var parent = node.parentNode;
       var index = Array.prototype.indexOf.call(parent.children, node) + 1;
 
-      prefix = /ol/i.test(parent.tagName) ? index + '.  ' : '*   ';
+      prefix = /ol/i.test(parent.nodeName) ? index + '.  ' : '*   ';
       return prefix + innerHTML;
     }
   },
 
   {
-    filter: /^ul$|^ol$/i,
+    filter: ['ul', 'ol'],
     replacement: function (innerHTML, node) {
       var strings = [];
       for (var i = 0; i < node.childNodes.length; i++) {
         strings.push(node.childNodes[i].nodeValue);
       }
 
-      if (/li/i.test(node.parentNode.tagName)) {
+      if (/li/i.test(node.parentNode.nodeName)) {
         return '\n' + strings.join('\n');
       }
       return '\n' + strings.join('\n') + '\n\n';
@@ -356,7 +355,7 @@ module.exports = [
 
   {
     filter: function (node) {
-      return this.isBlockLevel(node);
+      return this.isBlock(node);
     },
     replacement: function (innerHTML, node) {
       return '\n' + this.decodeHTMLEntities(node.outerHTML) + '\n\n';
@@ -370,13 +369,16 @@ exports.trim = function (string) {
   return string.replace(/^[ \r\n\t]+|[ \r\n\t]+$/g, '');
 };
 
-exports.isRegExp = function (obj) {
-  return Object.prototype.toString.call(obj) === '[object RegExp]';
-};
+var blocks = ['address', 'article', 'aside', 'audio', 'blockquote', 'body',
+              'canvas', 'center', 'dd', 'dir', 'div', 'dl', 'dt', 'fieldset',
+              'figcaption', 'figure', 'footer', 'form', 'frameset', 'h1', 'h2',
+              'h3', 'h4','h5', 'h6', 'header', 'hgroup', 'hr', 'html',
+              'isindex', 'li', 'main', 'menu', 'nav', 'noframes', 'noscript',
+              'ol', 'output', 'p', 'pre', 'section', 'table', 'tbody', 'td',
+              'tfoot', 'th', 'thead', 'tr', 'ul'];
 
-var blockRegex = /^(address|article|aside|audio|blockquote|body|canvas|center|dd|dir|div|dl|dt|fieldset|figcaption|figure|footer|form|frameset|h[1-6]|header|hgroup|hr|html|isindex|li|main|menu||nav|noframes|noscript|ol|output|p|pre|section|table|tbody|td|tfoot|th|thead|tr|ul)$/i;
-exports.isBlockLevel = function (node) {
-  return blockRegex.test(node.nodeName);
+exports.isBlock = function (node) {
+  return blocks.indexOf(node.nodeName.toLowerCase()) !== -1;
 };
 
 },{}],6:[function(require,module,exports){
