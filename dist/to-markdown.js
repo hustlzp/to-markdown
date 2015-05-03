@@ -353,7 +353,19 @@ module.exports = [
              node.firstChild.nodeName === 'CODE';
     },
     replacement: function(content, node) {
-      return '\n\n```\n' + node.firstChild.textContent + '\n```\n\n';
+      var $code = $(node).find('code');
+      var className = $code.attr('class');
+      var lang;
+
+      if(className !== "") {
+        lang = className.split('-')[1]
+      }
+
+      if (lang) {
+        return '\n\n```' + lang + '\n' + node.firstChild.textContent + '\n```\n\n';
+      } else {
+        return '\n\n```\n' + node.firstChild.textContent + '\n```\n\n';
+      }
     }
   },
 
